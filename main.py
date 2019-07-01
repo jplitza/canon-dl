@@ -122,12 +122,13 @@ class CanonImageDownloader:
 
         if written_length != int(req.headers['Content-Length']):
             warnings.warn(
-                "File {} download aborted after {} bytes".format(
+                "Download of {} aborted after {} bytes, deleting stub".format(
                     destfile,
                     written_length,
                 ),
                 RuntimeWarning,
             )
+            os.unlink(full_destfile)
             return
 
         self.previous.append(destfile)
