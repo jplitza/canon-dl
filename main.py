@@ -47,8 +47,9 @@ class FileBackedList(Sequence):
 
 
 class CanonImageDownloader:
-    def __init__(self, basepath, interface="eth0"):
+    def __init__(self, basepath, interface="eth0", daemon_mode=False):
         self.basepath = basepath
+        self.daemon_mode = daemon_mode
         self.con = GUPnP.Context.new(None, interface, 0)
 
         self.cp = GUPnP.ControlPoint.new(
@@ -178,7 +179,9 @@ class CanonImageDownloader:
     def _device_found(self, cp, device):
         if device.get_model_description() != "Canon Digital Camera":
             return
-        self.loop.quit()
+
+        if not self.daemon_mode:
+            self.loop.quit()
 
         self.service = device.get_service(
             "urn:schemas-upnp-org:service:ContentDirectory:1"
@@ -196,9 +199,14 @@ if __name__ == "__main__":
         default='eth0',
     )
     parser.add_argument(
+        '--daemon',
+        help='keep listening for devices after download finished',
+        action='store_true',
+    )
+    parser.add_argument(
         'basepath',
         help='folder where date-subfolders will be created',
     )
     args = parser.parse_args()
-    downloader = CanonImageDownloader(args.basepath, args.ifname)
+    downloader = CanonImageDownloader(args.basepath, args.ifname, args.daemon)
     downloader.run()
