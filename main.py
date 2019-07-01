@@ -115,7 +115,7 @@ class CanonImageDownloader:
             return
 
         with open(full_destfile, 'wb') as fd:
-            for chunk in req.iter_content(chunk_size=128):
+            for chunk in req.iter_content():
                 fd.write(chunk)
 
         self.previous.append(destfile)
