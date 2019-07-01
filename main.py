@@ -103,7 +103,7 @@ class CanonImageDownloader:
 
         os.makedirs(os.path.dirname(full_destfile), exist_ok=True)
 
-        req = requests.get(resource.get_uri(), stream=True)
+        req = requests.get(resource.get_uri(), stream=True, timeout=10)
         if req.status_code != requests.codes.ok:
             warnings.warn(
                 "File {} failed to download: HTTP code {}".format(
