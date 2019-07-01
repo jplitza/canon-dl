@@ -117,7 +117,7 @@ class CanonImageDownloader:
 
         written_length = 0
         with open(full_destfile, 'wb') as fd:
-            for chunk in req.iter_content():
+            for chunk in req.iter_content(chunk_size=128):
                 fd.write(chunk)
                 written_length += len(chunk)
 
