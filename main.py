@@ -114,9 +114,21 @@ class CanonImageDownloader:
             )
             return
 
+        written_length = 0
         with open(full_destfile, 'wb') as fd:
             for chunk in req.iter_content():
                 fd.write(chunk)
+                written_length += len(chunk)
+
+        if written_length != int(req.headers['Content-Length']):
+            warnings.warn(
+                "File {} download aborted after {} bytes".format(
+                    destfile,
+                    written_length,
+                ),
+                RuntimeWarning,
+            )
+            return
 
         self.previous.append(destfile)
 
