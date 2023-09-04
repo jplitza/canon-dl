@@ -9,7 +9,7 @@ import requests
 import warnings
 
 import gi
-gi.require_version('GUPnP', '1.0')
+gi.require_version('GUPnP', '1.6')
 gi.require_version('GUPnPAV', '1.0')
 from gi.repository import GUPnP, GUPnPAV, GLib  # noqa: E402
 
@@ -54,7 +54,7 @@ class CanonImageDownloader:
     ):
         self.basepath = basepath
         self.daemon_mode = daemon_mode
-        self.con = GUPnP.Context.new(None, interface, 0)
+        self.con = GUPnP.Context.new_full(interface, None, 0, 0)
 
         self.cp = GUPnP.ControlPoint.new(
             context=self.con,
@@ -177,20 +177,26 @@ class CanonImageDownloader:
                 "StartingIndex": fetched,
                 "RequestedCount": 0,
             }
-            ret = self.service.send_action_list(
+            action = GUPnP.ServiceProxyAction.new_from_list(
                 "Browse",
                 list(args.keys()),
                 list(args.values()),
+            )
+
+            if self.service.call_action(action) is None:
+                raise RuntimeError("Browse action failed")
+
+            success, ret = action.get_result_list(
                 ["Result", "NumberReturned", "TotalMatches"],
                 [str, int, int],
             )
 
-            if not ret[0]:
+            if not success:
                 raise RuntimeError("Browse action failed")
 
-            total = ret[1][2]
-            fetched += ret[1][1]
-            parser.parse_didl(ret[1][0])
+            total = ret[2]
+            fetched += ret[1]
+            parser.parse_didl(ret[0])
 
     def _device_found(self, cp: GUPnP.ControlPoint, device: GUPnP.Device):
         if device.get_model_description() != "Canon Digital Camera":
