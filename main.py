@@ -70,7 +70,13 @@ class CanonImageDownloader:
         try:
             date = time.strptime(item.get_date(), "%Y-%m-%dT%H:%M:%S")
         except TypeError:
-            date = None
+            warnings.warn(
+                "Could not determine date from for {}".format(
+                    item,
+                ),
+                RuntimeWarning,
+            )
+            return
 
         # choose largest resource for download
         resource = sorted(
@@ -79,7 +85,7 @@ class CanonImageDownloader:
         )[-1]
 
         destfile = os.path.join(
-            time.strftime("%Y-%m-%d", date) if date else "0000-00-00",
+            time.strftime("%Y/%Y-%m-%d", date),
             item.get_title(),
         )
         full_destfile = os.path.join(
