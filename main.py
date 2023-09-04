@@ -97,14 +97,16 @@ class CanonImageDownloader:
             return
 
         try:
-            if os.stat(full_destfile).st_size != resource.get_size():
+            counter = 0
+            while os.stat(full_destfile).st_size != resource.get_size() and counter < 3:
                 warnings.warn(
                     "File {} already exists with different size!".format(
                         destfile,
                     ),
                     RuntimeWarning,
                 )
-                return
+                full_destfile += '.retry'
+                counter += 1
         except FileNotFoundError:
             pass
 
