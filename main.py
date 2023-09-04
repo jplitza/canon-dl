@@ -16,18 +16,18 @@ from gi.repository import GUPnP, GUPnPAV, GLib  # noqa: E402
 
 class FileBackedList(Sequence):
     """Append-only list (of strings) that is backed by a file"""
-    def __init__(self, path):
+    def __init__(self, path: str):
         try:
             self._fd = open(path, 'r+')
             self._data = list(
-                line.rstrip("".join(self._fd.newlines))
+                line.rstrip("\r\n")
                 for line in self._fd.readlines()
             )
         except FileNotFoundError:
             self._fd = open(path, 'x')
             self._data = list()
 
-    def append(self, it):
+    def append(self, it: str):
         self._data.append(it)
         self._fd.write(it)
         self._fd.write('\n')
@@ -47,7 +47,11 @@ class FileBackedList(Sequence):
 
 
 class CanonImageDownloader:
-    def __init__(self, basepath, interface="eth0", daemon_mode=False):
+    def __init__(
+        self, basepath: str,
+        interface: str = "eth0",
+        daemon_mode: bool = False,
+    ):
         self.basepath = basepath
         self.daemon_mode = daemon_mode
         self.con = GUPnP.Context.new(None, interface, 0)
@@ -66,7 +70,7 @@ class CanonImageDownloader:
     def run(self):
         self.loop.run()
 
-    def _download_file(self, item):
+    def _download_file(self, item: GUPnPAV.DIDLLiteObject):
         try:
             date = time.strptime(item.get_date(), "%Y-%m-%dT%H:%M:%S")
         except TypeError:
@@ -145,13 +149,17 @@ class CanonImageDownloader:
         if date:
             os.utime(full_destfile, times=(2 * (time.mktime(date),)))
 
-    def _process_item(self, parser, item):
+    def _process_item(
+        self,
+        parser: GUPnPAV.DIDLLiteParser,
+        item: GUPnPAV.DIDLLiteObject,
+    ):
         if item.get_upnp_class().startswith("object.item.imageItem"):
             self._download_file(item)
         elif item.get_upnp_class().startswith("object.container"):
             self._fetch_all_items(item.get_id())
 
-    def _fetch_all_items(self, parent=0):
+    def _fetch_all_items(self, parent: int = 0):
         total = None
         fetched = 0
 
@@ -184,14 +192,14 @@ class CanonImageDownloader:
             fetched += ret[1][1]
             parser.parse_didl(ret[1][0])
 
-    def _device_found(self, cp, device):
+    def _device_found(self, cp: GUPnP.ControlPoint, device: GUPnP.Device):
         if device.get_model_description() != "Canon Digital Camera":
             return
 
         if not self.daemon_mode:
             self.loop.quit()
 
-        self.service = device.get_service(
+        self.service: GUPnP.ServiceInfo = device.get_service(
             "urn:schemas-upnp-org:service:ContentDirectory:1"
         )
         self._fetch_all_items()
